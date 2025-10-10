@@ -1,0 +1,46 @@
+# FastAPI and ASGI server
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# Google Cloud Platform
+cloud-sql-python-connector[pg8000]
+google-cloud-secret-manager
+google-cloud-run
+google-cloud-logging
+google-auth
+firebase-admin
+google-api-python-client
+
+# Database
+sqlalchemy
+alembic
+asyncpg
+pg8000
+psycopg2-binary
+
+# Authentication & Security
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# Utilities
+python-dotenv
+httpx
+aiofiles
+python-dateutil
+
+# Monitoring & Logging
+structlog
+
+# Testing
+pytest
+pytest-asyncio
+pytest-cov
+faker
+
+# Development
+black
+ruff
+mypy
