@@ -53,8 +53,11 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = Field(
         default=[
             "http://localhost:3000",
+            "http://localhost:3001",
             "http://localhost:8000",
-            "https://memcloud-frontend-*.run.app",
+            "https://memcloud-frontend-576223366889.us-central1.run.app",
+            "https://memcloud-api-576223366889.us-central1.run.app",
+            "*",  # Allow all origins for hackathon demo
         ]
     )
 

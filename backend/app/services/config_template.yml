@@ -1,0 +1,52 @@
+logging:
+  path: /tmp/memory_log
+  level: info
+
+long_term_memory:
+  derivative_deriver: sentence
+  metadata_prefix: "[$timestamp] $producer_id: "
+  embedder: my_embedder_id
+  reranker: my_reranker_id
+  vector_graph_store: my_storage_id
+
+SessionDB:
+  uri: sqlite:///tmp/memm_sessions.db
+
+Model:
+  testmodel:
+    model_vendor: openai
+    model_name: "gpt-4o-mini"
+    api_key: OPENAI_API_KEY_PLACEHOLDER
+
+storage:
+  my_storage_id:
+    vendor_name: neo4j
+    host: NEO4J_HOST_PLACEHOLDER
+    port: 7687
+    user: neo4j
+    password: NEO4J_PASSWORD_PLACEHOLDER
+
+sessionMemory:
+  model_name: testmodel
+  message_capacity: 500
+  max_message_length: 16000
+  max_token_num: 8000
+
+embedder:
+  my_embedder_id:
+    model_name: "text-embedding-3-small"
+    api_key: OPENAI_API_KEY_PLACEHOLDER
+
+reranker:
+  my_reranker_id:
+    type: "rrf-hybrid"
+    reranker_ids:
+      - id_ranker_id
+      - bm_ranker_id
+  id_ranker_id:
+    type: "identity"
+  bm_ranker_id:
+    type: "bm25"
+
+prompt:
+  profile: profile_prompt

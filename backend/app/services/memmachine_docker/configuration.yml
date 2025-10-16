@@ -1,0 +1,46 @@
+# MemMachine Episodic Memory Configuration
+# Based on MemMachine documentation
+
+long_term_memory:
+  derivative_deriver: sentence
+  embedder: openai_embedder
+  reranker: hybrid_reranker
+  vector_graph_store: neo4j_storage
+
+sessiondb:
+  uri: postgresql://postgres:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/postgres
+
+model:
+  openai_model:
+    model_name: "gpt-4o-mini"
+    api_key: ${OPENAI_API_KEY}
+
+storage:
+  neo4j_storage:
+    vendor_name: neo4j
+    host: ${NEO4J_HOST}
+    port: 7687
+    user: neo4j
+    password: ${NEO4J_PASSWORD}
+
+sessionmemory:
+  model_name: openai_model
+  message_capacity: 500
+  max_message_length: 16000
+  max_token_num: 8000
+
+embedder:
+  openai_embedder:
+    model_name: "text-embedding-3-small"
+    api_key: ${OPENAI_API_KEY}
+
+reranker:
+  hybrid_reranker:
+    type: "rrf-hybrid"
+    reranker_ids:
+      - identity_ranker
+      - bm25_ranker
+  identity_ranker:
+    type: "identity"
+  bm25_ranker:
+    type: "bm25"

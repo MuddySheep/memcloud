@@ -26,6 +26,9 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy source code
 COPY . .
 
+# Set production API URL
+ENV NEXT_PUBLIC_API_URL=https://memcloud-api-576223366889.us-central1.run.app
+
 # Build Next.js app
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build

@@ -57,6 +57,12 @@ COPY --from=builder /opt/venv /opt/venv
 # Copy application code
 COPY --chown=appuser:appuser ./app ./app
 
+# Copy migration files
+COPY --chown=appuser:appuser ./alembic ./alembic
+COPY --chown=appuser:appuser ./alembic.ini ./alembic.ini
+COPY --chown=appuser:appuser ./migrate.py ./migrate.py
+COPY --chown=appuser:appuser ./init_database_simple.py ./init_database_simple.py
+
 # Switch to non-root user (PFF Security Gate)
 USER appuser
 

@@ -70,7 +70,7 @@ class Instance(Base):
         comment="URL-safe slug for the instance (e.g., 'my-memory-1')"
     )
 
-    # Cloud Run Configuration
+    # Cloud Run Configuration - MemMachine
     cloud_run_service_name = Column(
         String(255),
         unique=True,
@@ -89,6 +89,77 @@ class Instance(Base):
         default="us-central1",
         nullable=False,
         comment="GCP region where instance is deployed"
+    )
+
+    # Neo4j Configuration
+    neo4j_service_name = Column(
+        String(255),
+        nullable=True,
+        comment="Neo4j Cloud Run service name"
+    )
+
+    neo4j_url = Column(
+        String(512),
+        nullable=True,
+        comment="Neo4j HTTP URL"
+    )
+
+    neo4j_bolt_url = Column(
+        String(512),
+        nullable=True,
+        comment="Neo4j Bolt URL for connections"
+    )
+
+    neo4j_secret_name = Column(
+        String(255),
+        nullable=True,
+        comment="Secret Manager name for Neo4j password"
+    )
+
+    # PostgreSQL Configuration
+    postgres_instance_name = Column(
+        String(255),
+        nullable=True,
+        comment="Cloud SQL PostgreSQL instance name"
+    )
+
+    postgres_ip = Column(
+        String(50),
+        nullable=True,
+        comment="PostgreSQL public IP address"
+    )
+
+    postgres_connection_name = Column(
+        String(512),
+        nullable=True,
+        comment="Cloud SQL connection name (project:region:instance)"
+    )
+
+    postgres_secret_name = Column(
+        String(255),
+        nullable=True,
+        comment="Secret Manager name for PostgreSQL password"
+    )
+
+    postgres_database = Column(
+        String(100),
+        default="memmachine",
+        nullable=False,
+        comment="PostgreSQL database name"
+    )
+
+    postgres_user = Column(
+        String(100),
+        default="postgres",
+        nullable=False,
+        comment="PostgreSQL username"
+    )
+
+    # OpenAI Configuration
+    openai_secret_name = Column(
+        String(255),
+        nullable=True,
+        comment="Secret Manager name for OpenAI API key"
     )
 
     # Status

@@ -66,35 +66,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
         environment=settings.ENVIRONMENT
     )
 
-    try:
-        # Initialize database (optional in development)
-        try:
-            await init_db()
-            logger.info("application.startup.database.initialized")
-
-            # Check database health
-            health = await check_db_health()
-            logger.info("application.startup.database.health", health=health)
-        except Exception as db_error:
-            if settings.ENVIRONMENT == "development":
-                logger.warning(
-                    "application.startup.database.skipped",
-                    reason="Database not available in development",
-                    error=str(db_error)
-                )
-            else:
-                # In production, database is required
-                raise
-
-        # TODO: Initialize Firebase Admin SDK
-        # firebase_admin.initialize_app()
-
-        logger.info("application.startup.complete")
-
-    except Exception as e:
-        logger.error("application.startup.failed", error=str(e))
-        if settings.ENVIRONMENT != "development":
-            sys.exit(1)
+    # Skip database initialization during startup - will connect lazily when needed
+    logger.info("application.startup.complete", note="Database will connect lazily when needed")
 
     yield
 
@@ -205,7 +178,7 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         detail=exc.detail
     )
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=exc.status_code,
         content={
             "error": True,
@@ -214,6 +187,14 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
             "status_code": exc.status_code,
         }
     )
+
+    # Add CORS headers manually to error responses
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+
+    return response
 
 
 @app.exception_handler(RequestValidationError)
@@ -251,13 +232,11 @@ async def general_exception_handler(request: Request, exc: Exception):
         exc_info=True
     )
 
-    # Don't expose internal errors in production
-    if settings.ENVIRONMENT == "production":
-        message = "An internal error occurred. Please try again later."
-    else:
-        message = str(exc)
+    # Temporarily expose errors for debugging
+    # TODO: Change back to generic message after debugging
+    message = f"{type(exc).__name__}: {str(exc)}"
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "error": True,
@@ -266,6 +245,14 @@ async def general_exception_handler(request: Request, exc: Exception):
             "status_code": 500,
         }
     )
+
+    # Add CORS headers manually to error responses
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+
+    return response
 
 
 # ============================================================================

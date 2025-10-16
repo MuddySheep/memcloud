@@ -1,0 +1,146 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "memmachine.fullname" . }}
+  labels:
+    {{- include "memmachine.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.memmachine.autoscaling.enabled }}
+  replicas: {{ .Values.memmachine.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "memmachine.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "memmachine.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "memmachine.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+          image: "{{ .Values.memmachine.image.repository }}:{{ .Values.memmachine.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.memmachine.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.memmachine.service.targetPort }}
+              protocol: TCP
+          env:
+            # PostgreSQL configuration
+            - name: POSTGRES_HOST
+              value: "{{ .Release.Name }}-postgresql"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "memmachine.fullname" . }}-secret
+                  key: postgres-password
+
+            # Neo4j configuration
+            - name: NEO4J_HOST
+              value: "{{ .Release.Name }}-neo4j"
+            - name: NEO4J_PORT
+              value: "7687"
+            - name: NEO4J_USER
+              value: "neo4j"
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "memmachine.fullname" . }}-secret
+                  key: neo4j-password
+
+            # OpenAI configuration
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "memmachine.fullname" . }}-secret
+                  key: openai-api-key
+
+            # Application configuration
+            - name: PORT
+              value: "{{ .Values.memmachine.service.targetPort }}"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: MEMORY_CONFIG
+              value: "/app/config/configuration.yml"
+
+            {{- range .Values.memmachine.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+
+          {{- if .Values.healthcheck.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.liveness.path }}
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: {{ .Values.healthcheck.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthcheck.liveness.periodSeconds }}
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          {{- end }}
+
+          {{- if .Values.healthcheck.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthcheck.readiness.path }}
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: {{ .Values.healthcheck.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthcheck.readiness.periodSeconds }}
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          {{- end }}
+
+          resources:
+            {{- toYaml .Values.memmachine.resources | nindent 12 }}
+
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "memmachine.fullname" . }}-config
+        - name: tmp
+          emptyDir: {}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

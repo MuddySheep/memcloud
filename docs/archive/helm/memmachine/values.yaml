@@ -1,0 +1,191 @@
+# Default values for MemMachine-in-a-Box
+# This is a production-ready configuration
+
+## Global settings
+global:
+  storageClass: "standard"
+
+## MemMachine configuration
+memmachine:
+  replicaCount: 3
+
+  image:
+    repository: ghcr.io/memmachine/memmachine
+    pullPolicy: IfNotPresent
+    tag: "latest"
+
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 8080
+
+  ingress:
+    enabled: true
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: memmachine.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: memmachine-tls
+        hosts:
+          - memmachine.example.com
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+  # Environment variables
+  env:
+    - name: LOG_LEVEL
+      value: "INFO"
+    - name: ENVIRONMENT
+      value: "production"
+
+## PostgreSQL with pgvector
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "changeme"
+    database: memmachine
+
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+
+    resources:
+      limits:
+        memory: 2Gi
+        cpu: 2000m
+      requests:
+        memory: 1Gi
+        cpu: 1000m
+
+    initdb:
+      scripts:
+        init.sql: |
+          CREATE EXTENSION IF NOT EXISTS vector;
+          CREATE EXTENSION IF NOT EXISTS pg_trgm;
+          CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+## Neo4j Graph Database
+neo4j:
+  enabled: true
+  neo4j:
+    name: memmachine-neo4j
+    password: "changeme"
+    edition: community
+
+  volumes:
+    data:
+      mode: dynamic
+      dynamic:
+        storageClassName: standard
+        size: 50Gi
+
+  resources:
+    cpu: "2000m"
+    memory: "4Gi"
+
+  metrics:
+    enabled: true
+    prometheus:
+      enabled: true
+
+## Monitoring and observability
+monitoring:
+  enabled: true
+
+  prometheus:
+    enabled: true
+    retention: 30d
+
+  grafana:
+    enabled: true
+    adminPassword: "changeme"
+
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+    dashboardsConfigMaps:
+      default: memmachine-dashboard
+
+## Secrets management
+secrets:
+  openaiApiKey: ""
+  postgresPassword: ""
+  neo4jPassword: ""
+
+## Backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: 7  # Keep 7 days of backups
+
+## Health checks
+healthcheck:
+  liveness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 10
+
+  readiness:
+    enabled: true
+    path: /health/ready
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+## Network policies
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: memmachine
+
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: memmachine
+    - ports:
+        - protocol: TCP
+          port: 5432  # PostgreSQL
+        - protocol: TCP
+          port: 7687  # Neo4j

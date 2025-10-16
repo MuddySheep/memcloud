@@ -80,6 +80,7 @@ def get_connector() -> Callable:
                 user=settings.DB_USER,
                 password=settings.DB_PASSWORD,
                 db=settings.DB_NAME,
+                ip_type="PUBLIC",  # Use public IP (no VPC needed)
             )
             logger.info("database.connection.success", instance=settings.CLOUD_SQL_CONNECTION_NAME)
             return conn

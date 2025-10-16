@@ -1,0 +1,35 @@
+apiVersion: v2
+name: memmachine
+description: MemMachine-in-a-Box - Complete AI Memory Layer Deployment
+type: application
+version: 1.0.0
+appVersion: "latest"
+
+keywords:
+  - memmachine
+  - ai
+  - memory
+  - pgvector
+  - neo4j
+
+home: https://github.com/MemMachine/MemMachine
+sources:
+  - https://github.com/MemMachine/MemMachine
+
+dependencies:
+  - name: postgresql
+    version: 12.1.0
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: neo4j
+    version: 5.23.0
+    repository: https://neo4j.github.io/helm-charts
+    condition: neo4j.enabled
+
+maintainers:
+  - name: MemCloud Team
+    email: team@memcloud.io
+
+annotations:
+  "artifacthub.io/prerelease": "false"
+  "artifacthub.io/license": Apache-2.0
