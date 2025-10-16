@@ -65,6 +65,9 @@ yarn-error.log*
 *~
 .DS_Store
 
+# MCP Tools
+.playwright-mcp/
+
 # Logs
 *.log
 logs/
